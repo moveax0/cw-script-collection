@@ -4,10 +4,14 @@ if syntaxcheck then return "" end  -- prevents side-effects during syntax-check
 
 [ENABLE]
 
+-- suppress console popup
+local le = getLuaEngine()
+le.ShowOnPrint = false
+
 -- CONFIG
 local bpAddr    = getAddress("Cube.exe+219D51")
 local seenESI   = {}
-local seenNames = {}  -- Track seen names for header pruning
+local seenNames = {}  -- track seen names for header pruning
 
 debugProcess()
 debug_setBreakpoint(bpAddr)
@@ -15,7 +19,7 @@ print(string.format("🔍 Scan started; breakpoint at 0x%08X", bpAddr))
 
 local al = getAddressList()
 
--- 1. Ensure top-level entityList header exists
+-- ensure top-level entityList header exists
 local entityHdr = al.getMemoryRecordByDescription("entityList")
 if not entityHdr then
   entityHdr = al.createMemoryRecord()
@@ -28,14 +32,14 @@ else
   print("➡️ Using existing entityList header")
 end
 
--- Utility to get cleaned 16-byte name at ESI+0x1168
+-- get clean 16-byte name at ESI+0x1168
 local function getName(esi)
   return (readString(esi + 0x1168, 16) or "")
            :gsub("%z.*", "")
            :gsub("\r?\n", "")
 end
 
--- Utility: find or create player header under entityList
+-- find or create player header under entityList
 local function getOrMakePlayerHeader(name)
   for i = 0, entityHdr.Count - 1 do
     local mr = entityHdr.getChild(i)
@@ -52,9 +56,9 @@ local function getOrMakePlayerHeader(name)
   return hdr
 end
 
--- Create all player sections
+-- create all player sections
 local function setupPlayerSections(parentHdr, baseAddr)
-  -- Create attributes group header
+  -- create attributes group header
   local attrHdr = al.createMemoryRecord()
   attrHdr.IsGroupHeader = true
   attrHdr.Description   = "attributes"
@@ -62,7 +66,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
   attrHdr.Collapsed     = true
   attrHdr.appendToEntry(parentHdr)
 
-  -- Attribute definitions [name, offset, type]
+  -- attribute definitions [name, offset, type]
   local attributes = {
     {"level",           0x190,  vtDword},
     {"experience",      0x194,  vtDword},
@@ -72,7 +76,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
     {"platinum coins",  0x1308, vtDword}
   }
 
-  -- Create attribute records
+  -- create attribute records
   for _, attr in ipairs(attributes) do
     local mr = al.createMemoryRecord()
     mr.Description = attr[1]
@@ -81,7 +85,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
     mr.appendToEntry(attrHdr)
   end
 
-  -- Create resources group header
+  -- create resources group header
   local resHdr = al.createMemoryRecord()
   resHdr.IsGroupHeader = true
   resHdr.Description   = "resources"
@@ -89,7 +93,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
   resHdr.Collapsed     = true
   resHdr.appendToEntry(parentHdr)
 
-  -- Resource definitions [name, offset, type] - all floats
+  -- resource definitions [name, offset, type]
   local resources = {
     {"health",        0x16C,  vtSingle},
     {"mana",          0x170,  vtSingle},
@@ -98,7 +102,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
     {"block power",   0x174,  vtSingle}
   }
 
-  -- Create resource records
+  -- create resource records
   for _, res in ipairs(resources) do
     local mr = al.createMemoryRecord()
     mr.Description = res[1]
@@ -107,7 +111,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
     mr.appendToEntry(resHdr)
   end
 
-  -- Create coordinates group header
+  -- create coordinates group header
   local coordHdr = al.createMemoryRecord()
   coordHdr.IsGroupHeader = true
   coordHdr.Description   = "coordinates"
@@ -115,14 +119,14 @@ local function setupPlayerSections(parentHdr, baseAddr)
   coordHdr.Collapsed     = true
   coordHdr.appendToEntry(parentHdr)
 
-  -- Coordinate definitions [name, offset, type] - all floats
+  -- coordinate definitions [name, offset, type]
   local coordinates = {
     {"x", 0x10, vtSingle},
     {"y", 0x18, vtSingle},
     {"z", 0x20, vtSingle}
   }
 
-  -- Create coordinate records
+  -- create coordinate records
   for _, coord in ipairs(coordinates) do
     local mr = al.createMemoryRecord()
     mr.Description = coord[1]
@@ -131,7 +135,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
     mr.appendToEntry(coordHdr)
   end
 
-  -- Create gear group header
+  -- create gear group header
   local gearHdr = al.createMemoryRecord()
   gearHdr.IsGroupHeader = true
   gearHdr.Description   = "gear"
@@ -139,7 +143,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
   gearHdr.Collapsed     = true
   gearHdr.appendToEntry(parentHdr)
 
-  -- Gear slot definitions [header name, description, offset]
+  -- gear slot definitions [header name, description, offset]
   local gearSlots = {
     {"left_weapon",  "leftWeaponFull",  0x990},
     {"right_weapon", "rightWeaponFull", 0xAA8},
@@ -155,9 +159,9 @@ local function setupPlayerSections(parentHdr, baseAddr)
     {"pet",          "petFull",         0x1020}
   }
 
-  -- Create gear slot headers and byte arrays
+  -- create gear slot headers and byte arrays
   for _, slot in ipairs(gearSlots) do
-    -- Create gear slot header
+    -- create gear slot header
     local slotHdr = al.createMemoryRecord()
     slotHdr.IsGroupHeader = true
     slotHdr.Description   = slot[1]
@@ -165,17 +169,17 @@ local function setupPlayerSections(parentHdr, baseAddr)
     slotHdr.Collapsed     = true
     slotHdr.appendToEntry(gearHdr)
 
-    -- Create byte array record
+    -- create byte array record
     local mr = al.createMemoryRecord()
     mr.Description = slot[2]
     mr.Address     = baseAddr + slot[3]
     mr.Type        = vtByteArray
-    mr.Aob.Size  = 277  -- Set the byte length
-    mr.ShowAsHex = true  -- Display in hexadecimal
+    mr.Aob.Size  = 277  -- set byte length
+    mr.ShowAsHex = true  -- display in hexadecimal
     mr.appendToEntry(slotHdr)
   end
 
-  -- Create skills group header
+  -- create skills group header
   local skillsHdr = al.createMemoryRecord()
   skillsHdr.IsGroupHeader = true
   skillsHdr.Description   = "skills"
@@ -183,7 +187,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
   skillsHdr.Collapsed     = true
   skillsHdr.appendToEntry(parentHdr)
 
-  -- Skill definitions [name, offset, type]
+  -- skill definitions [name, offset, type]
   local skills = {
     {"skill 1",        0x1150, vtDword},
     {"skill 2",        0x1154, vtDword},
@@ -196,7 +200,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
     {"sailing",        0x114C, vtDword}
   }
 
-  -- Create skill records
+  -- create skill records
   for _, skill in ipairs(skills) do
     local mr = al.createMemoryRecord()
     mr.Description = skill[1]
@@ -239,15 +243,15 @@ function debugger_onBreakpoint()
 
   print(string.format("➕ Found entity: %s @ %s", title, addr))
 
-  -- Ensure header exists
+  -- ensure header exists
   local hdr = getOrMakePlayerHeader(title)
 
-  -- Check if we need to create baseAddress + sections
+  -- check if we need to create baseAddress + sections
   local needsSetup = false
   if hdr.Count == 0 then
     needsSetup = true
   else
-    -- Check if attributes header exists
+    -- check if attributes header exists
     local hasAttributes = false
     for j = 0, hdr.Count - 1 do
       local child = hdr.getChild(j)
@@ -260,14 +264,14 @@ function debugger_onBreakpoint()
   end
 
   if needsSetup then
-    -- Create baseAddress record
+    -- create baseAddress record
     local mr = al.createMemoryRecord()
     mr.Address     = esi
     mr.Type        = vtByte
     mr.Description = "baseAddress"
     mr.appendToEntry(hdr)
 
-    -- Create all sections
+    -- create all sections
     setupPlayerSections(hdr, esi)
   end
 
