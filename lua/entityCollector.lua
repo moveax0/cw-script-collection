@@ -6,7 +6,8 @@ if syntaxcheck then return "" end  -- prevents side-effects during syntax-check
 
 -- suppress console popup
 local le = getLuaEngine()
-le.ShowOnPrint = false
+le.cbShowOnPrint.Checked = false
+le.hide()
 
 -- CONFIG
 local bpAddr    = getAddress("Cube.exe+219D51")
