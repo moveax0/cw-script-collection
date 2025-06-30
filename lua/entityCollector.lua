@@ -11,7 +11,7 @@ le.hide()
 
 -- CONFIG
 local bpAddr    = getAddress("Cube.exe+219D51")
-local seenESI   = {}
+local seenEntities = {}  -- track ESI addresses and names
 local seenNames = {}  -- track seen names for header pruning
 
 debugProcess()
@@ -41,16 +41,32 @@ local function getName(esi)
 end
 
 -- find or create player header under entityList
-local function getOrMakePlayerHeader(name)
+local function getOrMakePlayerHeader(title, esi)
+  -- First, try to find an existing header for this title
   for i = 0, entityHdr.Count - 1 do
     local mr = entityHdr.getChild(i)
-    if mr.IsGroupHeader and mr.Description == name then
-      return mr
+    if mr.IsGroupHeader and mr.Description == title then
+      -- found existing header - check if it has the correct base address
+      local baseRecord = nil
+      for j = 0, mr.Count - 1 do
+        local child = mr.getChild(j)
+        if child.Description == "baseAddress" then
+          baseRecord = child
+          break
+        end
+      end
+      
+      -- if base address matches, return existing header
+      if baseRecord and tonumber(baseRecord.Address, 16) == esi then
+        return mr
+      end
     end
   end
+  
+  -- no valid header found - create a new one
   local hdr = al.createMemoryRecord()
   hdr.IsGroupHeader = true
-  hdr.Description   = name
+  hdr.Description   = title
   hdr.Options       = "[moHideChildren]"
   hdr.Collapsed     = true
   hdr.appendToEntry(entityHdr)
@@ -211,23 +227,55 @@ local function setupPlayerSections(parentHdr, baseAddr)
   end
 end
 
--- PTR: Called on each bp hit
+-- ptr: called on each bp hit
 function debugger_onBreakpoint()
   if EIP ~= bpAddr then return 1 end
 
   local esi  = ESI
   local addr = string.format("0x%X", esi)
 
-  if seenESI[esi] then
+  if seenEntities[esi] then
     print(string.format("🔁 Duplicate ESI 0x%X -> ending scan.", esi))
 
-    -- SCAN COMPLETE → prune any stale headers not seen
+    -- SCAN COMPLETE → prune any stale headers
     for i = entityHdr.Count - 1, 0, -1 do
-      local hdr = entityHdr.getChild(i)
-      if hdr.IsGroupHeader and not seenNames[hdr.Description] then
-        print("🗑 Removing stale header: " .. hdr.Description)
-        hdr.destroy()
-      end
+        local hdr = entityHdr.getChild(i)
+        if hdr.IsGroupHeader then
+            -- first check: remove headers not seen in this scan
+            if not seenNames[hdr.Description] then
+                print("🗑 Removing stale header (not in scan): " .. hdr.Description)
+                hdr.destroy()
+            else
+                -- second check: header name exists but base address might be outdated
+                local baseRecord = nil
+                local baseAddrNum = nil
+                
+                -- find baseAddress record for header
+                for j = 0, hdr.Count - 1 do
+                    local child = hdr.getChild(j)
+                    if child.Description == "baseAddress" then
+                        baseRecord = child
+                        baseAddrNum = tonumber(child.Address, 16)
+                        break
+                    end
+                end
+                
+                -- check if valid baseAddress record was found
+                if not baseRecord then
+                    print("🗑 Removing header with missing baseAddress: " .. hdr.Description)
+                    hdr.destroy()
+                else
+                    -- check if entity exists in current scan
+                    local currentName = seenEntities[baseAddrNum]
+                    if not (currentName and currentName == hdr.Description) then
+                        local reason = currentName and "name mismatch" or "address not in scan"
+                        print(string.format("🗑 Removing outdated header: %s (base: 0x%X, reason: %s)",
+                                            hdr.Description, baseAddrNum, reason))
+                        hdr.destroy()
+                    end
+                end
+            end
+        end
     end
 
     debug_removeBreakpoint(bpAddr)
@@ -236,35 +284,41 @@ function debugger_onBreakpoint()
     return 1
   end
 
-  -- NEW entity encountered
-  seenESI[esi] = true
+  -- new entity encountered
   local name = getName(esi)
   local title = (#name > 0 and name) or addr
+  seenEntities[esi] = title  -- store name with address
   seenNames[title] = true
 
   print(string.format("➕ Found entity: %s @ %s", title, addr))
 
-  -- ensure header exists
-  local hdr = getOrMakePlayerHeader(title)
+  -- ensure header exists - use the new function that checks address
+  local hdr = getOrMakePlayerHeader(title, esi)
 
   -- check if we need to create baseAddress + sections
   local needsSetup = false
   if hdr.Count == 0 then
     needsSetup = true
   else
-    -- check if attributes header exists
-    local hasAttributes = false
+    -- check valid baseAddress record that matches exists
+    local baseMatches = false
     for j = 0, hdr.Count - 1 do
       local child = hdr.getChild(j)
-      if child.IsGroupHeader and child.Description == "attributes" then
-        hasAttributes = true
+      if child.Description == "baseAddress" and tonumber(child.Address, 16) == esi then
+        baseMatches = true
         break
       end
     end
-    needsSetup = not hasAttributes
+    
+    needsSetup = not baseMatches
   end
 
   if needsSetup then
+    -- remove any existing children (if reusing a header)
+    while hdr.Count > 0 do
+      hdr.getChild(0).destroy()
+    end
+    
     -- create baseAddress record
     local mr = al.createMemoryRecord()
     mr.Address     = esi
@@ -274,6 +328,7 @@ function debugger_onBreakpoint()
 
     -- create all sections
     setupPlayerSections(hdr, esi)
+    print(string.format("🔄 Created/updated sections for %s @ 0x%X", title, esi))
   end
 
   debug_continueFromBreakpoint(co_run)
@@ -283,5 +338,3 @@ end
 [DISABLE]
 
 -- not needed?
-
-{$asm}
