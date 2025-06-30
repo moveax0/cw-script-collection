@@ -74,18 +74,18 @@ _G.originalBytes = {
   shoulder = readBytes(_G.gearAnimator_addrs.shoulderAddr, 277, true)
 }
 
+_G.gearAnimator_enabled = {
+  left   = false,
+  right  = false,
+  chest  = false,
+  shoulder = false
+}
+
 local intervals = {
   left   = 1000,
   right  = 1000,
   chest  = 1000,
   shoulder = 1000
-}
-
-local enabled = {
-  left   = false,
-  right  = false,
-  chest  = false,
-  shoulder = false
 }
 
 local function setupWriter(name, addr, list, interval, enabledFlag)
@@ -103,10 +103,10 @@ local function setupWriter(name, addr, list, interval, enabledFlag)
   return timer
 end
 
-_G.LeftTimer  = setupWriter("Left",  _G.gearAnimator_addrs.leftWeaponAddr,  leftWeaponList,  intervals.left,   enabled.left)
-_G.RightTimer = setupWriter("Right", _G.gearAnimator_addrs.rightWeaponAddr, rightWeaponList, intervals.right,  enabled.right)
-_G.ChestTimer = setupWriter("Chest", _G.gearAnimator_addrs.chestAddr,       chestList,       intervals.chest,  enabled.chest)
-_G.ShoulderTimer = setupWriter("Shoulder", _G.gearAnimator_addrs.shoulderAddr, shoulderList, intervals.shoulder, enabled.shoulder)
+_G.LeftTimer  = setupWriter("Left",  _G.gearAnimator_addrs.leftWeaponAddr,  leftWeaponList,  intervals.left,   _G.gearAnimator_enabled.left)
+_G.RightTimer = setupWriter("Right", _G.gearAnimator_addrs.rightWeaponAddr, rightWeaponList, intervals.right,  _G.gearAnimator_enabled.right)
+_G.ChestTimer = setupWriter("Chest", _G.gearAnimator_addrs.chestAddr,       chestList,       intervals.chest,  _G.gearAnimator_enabled.chest)
+_G.ShoulderTimer = setupWriter("Shoulder", _G.gearAnimator_addrs.shoulderAddr, shoulderList, intervals.shoulder, _G.gearAnimator_enabled.shoulder)
 
 print("✅ Loaded patterns from folder. Set enabled flags to 'true' to start writing.")
 
@@ -137,22 +137,24 @@ if _G.ShoulderTimer then
   _G.ShoulderTimer = nil
 end
 
--- restore original bytes
-if _G.originalBytes and _G.gearAnimator_addrs then
-  if _G.originalBytes.left then
+-- restore only gear that's enabled
+if _G.originalBytes and _G.gearAnimator_addrs and _G.gearAnimator_enabled then
+  if _G.gearAnimator_enabled.left and _G.originalBytes.left then
     writeBytes(_G.gearAnimator_addrs.leftWeaponAddr, _G.originalBytes.left)
   end
-  if _G.originalBytes.right then
+  if _G.gearAnimator_enabled.right and _G.originalBytes.right then
     writeBytes(_G.gearAnimator_addrs.rightWeaponAddr, _G.originalBytes.right)
   end
-  if _G.originalBytes.chest then
+  if _G.gearAnimator_enabled.chest and _G.originalBytes.chest then
     writeBytes(_G.gearAnimator_addrs.chestAddr, _G.originalBytes.chest)
   end
-  if _G.originalBytes.shoulder then
+  if _G.gearAnimator_enabled.shoulder and _G.originalBytes.shoulder then
     writeBytes(_G.gearAnimator_addrs.shoulderAddr, _G.originalBytes.shoulder)
   end
+  
   _G.originalBytes = nil
   _G.gearAnimator_addrs = nil
+  _G.gearAnimator_enabled = nil
 end
 
-print("🛑 Script disabled. Restored original gear.")
+print("🛑 Script disabled. Restored original gear for enabled parts only.")
