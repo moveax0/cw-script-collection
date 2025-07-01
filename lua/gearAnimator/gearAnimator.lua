@@ -11,6 +11,20 @@ local filenames = {
   shoulder = "cannotBeEmpty.txt"
 }
 
+_G.gearAnimator_enabled = {
+  left   = false,
+  right  = false,
+  chest  = false,
+  shoulder = false
+}
+
+local intervals = {
+  left   = 1000,
+  right  = 1000,
+  chest  = 1000,
+  shoulder = 1000
+}
+
 -- hide lua console
 getLuaEngine().cbShowOnPrint.Checked = false
 getLuaEngine().hide()
@@ -72,20 +86,6 @@ _G.originalBytes = {
   right  = readBytes(_G.gearAnimator_addrs.rightWeaponAddr, 277, true),
   chest  = readBytes(_G.gearAnimator_addrs.chestAddr, 277, true),
   shoulder = readBytes(_G.gearAnimator_addrs.shoulderAddr, 277, true)
-}
-
-_G.gearAnimator_enabled = {
-  left   = false,
-  right  = false,
-  chest  = false,
-  shoulder = false
-}
-
-local intervals = {
-  left   = 1000,
-  right  = 1000,
-  chest  = 1000,
-  shoulder = 1000
 }
 
 local function setupWriter(name, addr, list, interval, enabledFlag)
