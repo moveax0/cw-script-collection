@@ -9,7 +9,7 @@ local le = getLuaEngine()
 le.cbShowOnPrint.Checked = false
 le.hide()
 
--- CONFIG
+-- config
 local bpAddr    = getAddress("Cube.exe+219D51")
 local seenEntities = {}  -- track ESI addresses and names
 local seenNames = {}  -- track seen names for header pruning
@@ -162,18 +162,18 @@ local function setupPlayerSections(parentHdr, baseAddr)
 
   -- gear slot definitions [header name, description, offset]
   local gearSlots = {
-    {"left_weapon",  "leftWeaponFull",  0x990},
-    {"right_weapon", "rightWeaponFull", 0xAA8},
-    {"chest",        "chestFull",       0x530},
-    {"hands",        "handsFull",       0x760},
-    {"feet",         "feetFull",        0x648},
-    {"shoulder",     "shoulderFull",    0x878},
-    {"neck",         "neckFull",        0x418},
-    {"left_ring",    "leftRingFull",    0xBC0},
-    {"right_ring",   "rightRingFull",   0xCD8},
-    {"special",      "specialFull",     0xF08},
-    {"light",        "lightFull",       0xDF0},
-    {"pet",          "petFull",         0x1020}
+    {"left_weapon",  "leftWeaponFull",  0x990,  "leftWeaponCust",  0xAA4},
+    {"right_weapon", "rightWeaponFull", 0xAA8,  "rightWeaponCust", 0xBBC},
+    {"chest",        "chestFull",       0x530,  "chestCust",       0x644},
+    {"hands",        "handsFull",       0x760,  "handsCust",       0x874},
+    {"feet",         "feetFull",        0x648,  "feetCust",        0x75C},
+    {"shoulder",     "shoulderFull",    0x878,  "shoulderCust",    0x98C},
+    {"neck",         "neckFull",        0x418,  "neckCust",        0x52C},
+    {"left_ring",    "leftRingFull",    0xBC0,  "leftRingCust",    0xCD4},
+    {"right_ring",   "rightRingFull",   0xCD8,  "rightRingCust",   0xDEC},
+    {"special",      "specialFull",     0xF08,  "specialCust",     0x101C},
+    {"light",        "lightFull",       0xDF0,  "lightCust",       0xF04},
+    {"pet",          "petFull",         0x1020, "petCust",         0x1134}
   }
 
   -- create gear slot headers and byte arrays
@@ -194,6 +194,14 @@ local function setupPlayerSections(parentHdr, baseAddr)
     mr.Aob.Size  = 277  -- set byte length
     mr.ShowAsHex = true  -- display in hexadecimal
     mr.appendToEntry(slotHdr)
+
+    -- create 4 byte record for customization tracking
+    local mrCust = al.createMemoryRecord()
+    mrCust.Description = slot[4]
+    mrCust.Address     = baseAddr + slot[5]
+    mrCust.Type        = vtDword
+    mrCust.ShowAsHex   = false
+    mrCust.appendToEntry(slotHdr)
   end
 
   -- create skills group header
