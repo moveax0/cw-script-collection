@@ -1,0 +1,18 @@
+gearAnimator - tutorial
+1. set your folder that stores your items/animations (file path has to end in a backslash)
+2. insert the filenames (they cannot be empty and have to use a functioning file in the specified folder)
+3. gearAnimator_enabled: here you choose which gear you want to be animated ( true = animated ; false = not animated)
+    left = left weapon
+    right = right weapon
+    chest = chest
+    shoulder = shoulder
+4. intervals: set how fast the animation should play in milliseconds (1000ms = 1 second)
+5. creating animation files
+    - use .txt files
+    - use cheat engine to copy and paste the hex value of the item (277 bytes long)
+    - (to make this easier you can use the entityCollector from this repo, it will give you the properly formatted bytes to copy paste)
+    - the bytes start at the item type (sword, etc.)
+    - the bytes end at the byte that determines the amount of customization cubes used (stop at the first byte, even though it's 4 bytes)
+    - repeat this process for each animation and separate the animations by starting a new line (no commas needed)
+    - there are examples in the "gearFiles" folder
+6. I recommend unequipping any gear before enabling the script in-game and do not swap gear while the script is active, as that will result in your gear being overwritten and therefore deleted.
