@@ -55,4 +55,26 @@ How To Use:
 > [!CAUTION]
 > unequip any gear before animating it in-case your game crashes and do NOT swap gear while the script is active, as that will result in your gear being overwritten and therefore deleted
 
+### **gearLogger**
+Saves all customized gear you encounter to a database
+
+
+Functionality:
+  - uses the entityList header created by entityCollector to write new entries to the database
+  - entries are differentiated by entity name and entity class
+  - uses proper json encoding
+
+
+How To Use:
+  - download [dkjson.lua](https://github.com/LuaDist/dkjson) and paste it into the CheatEngine folder that stores your cheat tables
+  - add the entityCollector from this repo to your cheat table
+  - use the entityCollector to create the entityList header
+  - update the gearLogger by costumizing the file path at the very top of the script
+  - after updating the file path and using the entityCollector to create the entityList header you can activate the gearLogger script
+> [!TIP]
+> after adding the script right click it inside of your cheat table and assign it a hotkey
+
+> [!IMPORTANT]
+> When using this script make sure to update your entityList using the entityCollector script every time after you or somebody else rejoins. Otherwise entries could be written to the wrong entity name.
+
 ## ASM
