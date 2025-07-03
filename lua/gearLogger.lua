@@ -238,8 +238,8 @@ myTimer.OnTimer = function(timer)
         local v = tonumber(foundCust.Value)
         if v and v > 0 and v <= 32 then
           if foundFull then
-            -- read the full 277-byte array
-            local formattedBytes = readBytesFormatted(foundFull.Address, 277)
+            -- read the full 280-byte array
+            local formattedBytes = readBytesFormatted(foundFull.Address, 280)
             
             -- skip if first byte is 00
             if formattedBytes:sub(1, 2) == "00" then
