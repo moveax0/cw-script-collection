@@ -47,8 +47,8 @@ local function loadPatterns(path)
       for hex in line:gmatch("%x%x") do
         table.insert(bytes, tonumber(hex, 16))
       end
-      assert(#bytes == 277,
-        string.format("Each pattern must be 277 bytes (%d) in %s", #bytes, path))
+      assert(#bytes == 280,
+        string.format("Each pattern must be 280 bytes (%d) in %s", #bytes, path))
       table.insert(t, bytes)
     end
   end
@@ -82,10 +82,10 @@ _G.gearAnimator_addrs = {
 
 -- store original bytes for restoration
 _G.originalBytes = {
-  left   = readBytes(_G.gearAnimator_addrs.leftWeaponAddr, 277, true),
-  right  = readBytes(_G.gearAnimator_addrs.rightWeaponAddr, 277, true),
-  chest  = readBytes(_G.gearAnimator_addrs.chestAddr, 277, true),
-  shoulder = readBytes(_G.gearAnimator_addrs.shoulderAddr, 277, true)
+  left   = readBytes(_G.gearAnimator_addrs.leftWeaponAddr, 280, true),
+  right  = readBytes(_G.gearAnimator_addrs.rightWeaponAddr, 280, true),
+  chest  = readBytes(_G.gearAnimator_addrs.chestAddr, 280, true),
+  shoulder = readBytes(_G.gearAnimator_addrs.shoulderAddr, 280, true)
 }
 
 local function setupWriter(name, addr, list, interval, enabledFlag)
