@@ -191,7 +191,7 @@ local function setupPlayerSections(parentHdr, baseAddr)
     mr.Description = slot[2]
     mr.Address     = baseAddr + slot[3]
     mr.Type        = vtByteArray
-    mr.Aob.Size  = 277  -- set byte length
+    mr.Aob.Size  = 280  -- set byte length
     mr.ShowAsHex = true  -- display in hexadecimal
     mr.appendToEntry(slotHdr)
 
