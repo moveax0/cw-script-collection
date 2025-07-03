@@ -23,6 +23,25 @@ local function readBytesFormatted(addr, size)
   return table.concat(t, " ")
 end
 
+-- function to mask unstable bytes (set to 00)
+local function maskBytes(formattedStr)
+    -- split the string into tokens
+    local tokens = {}
+    for token in formattedStr:gmatch("%S+") do
+        table.insert(tokens, token)
+    end
+    
+    -- positions to mask (1-indexed)
+    local maskIndices = {3,4,9,10,11,12,16,19,20}
+    for _, idx in ipairs(maskIndices) do
+        if tokens[idx] then
+            tokens[idx] = "00"
+        end
+    end
+    
+    return table.concat(tokens, " ")
+end
+
 local function loadDB()
   local f = io.open(dbPath, "r")
   if not f then
@@ -219,17 +238,31 @@ myTimer.OnTimer = function(timer)
         local v = tonumber(foundCust.Value)
         if v and v > 0 and v <= 32 then
           if foundFull then
+            -- read the full 277-byte array
             local formattedBytes = readBytesFormatted(foundFull.Address, 277)
+            
+            -- skip if first byte is 00
+            if formattedBytes:sub(1, 2) == "00" then
+              goto next_piece
+            end
+            
+            -- create masked version for comparison (with unstable bytes set to 00)
+            local maskedBytes = maskBytes(formattedBytes)
+            
             db[name] = db[name] or {}
             db[name][cls] = db[name][cls] or {}
             local gearTbl = db[name][cls]
             gearTbl[pieceName] = gearTbl[pieceName] or {}
-
-            -- check for existing entry
+            
+            -- check for existing entry using masked bytes
             local exists = false
             if gearTbl[pieceName] then
               for _, old in ipairs(gearTbl[pieceName]) do
-                if old == formattedBytes then exists = true; break end
+                -- compare with masked version
+                if old == maskedBytes then 
+                  exists = true
+                  break
+                end
               end
             end
 
@@ -237,16 +270,14 @@ myTimer.OnTimer = function(timer)
               -- print(string.format("[%s][%s][%s] already in DB", name, cls, pieceName))
             else
               print(string.format("[%s][%s][%s] New gear detected—adding", name, cls, pieceName))
+              -- store the masked version in the database
               gearTbl[pieceName] = gearTbl[pieceName] or {}
-              table.insert(gearTbl[pieceName], formattedBytes)
+              table.insert(gearTbl[pieceName], maskedBytes)
               saveDB(db)
             end
           else
             print(string.format("[%s] Missing Full data for %s", name, pieceName))
           end
-        else
-          -- print(string.format("[%s] Invalid Cust value: %s (converted to %s)", 
-                             -- name, tostring(foundCust.Value), tostring(v)))
         end
       end
       ::next_piece::
