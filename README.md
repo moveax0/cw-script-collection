@@ -44,8 +44,8 @@ How To Use:
 
     - HOW TO CREATE ANIMATION FILES
       - animation files have to be .txt files
-      - each frame has to be exactly 277 bytes long
-      - I recommend using the gearAnimator from this repo to get the correctly formatted 277 long byte arrays
+      - each frame has to be exactly 280 bytes long
+      - I recommend using the gearAnimator from this repo to get the correctly formatted 280 long byte arrays
         - alternatively, you can also use CheatEngine to browse your gear's memory region and copy the bytes from there
       - inside the text file, you want to separate each frame by creating a new line (no commas needed)
       - there are examples in the gearFiles folder to learn from
