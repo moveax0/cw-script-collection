@@ -9,7 +9,7 @@ newmem: //this is allocated memory, you have read,write,execute access
 //place your code here
 
 originalcode:
-mov eax,1
+mov eax,0x10
 
 exit:
 jmp returnhere
