@@ -52,6 +52,7 @@ doSub:
 // execute custom code if register is local player x or y
 doAdd:
   add [ecx], eax
+  jmp restore
 
 // execute custom code if register is local player z and spacebar = true
 doAscend:
